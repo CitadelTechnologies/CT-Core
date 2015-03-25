@@ -3,15 +3,26 @@ package main
 import(
     "fmt"
     "flag"
-    "gleipnir/node"
+    "runtime"
+    //"gleipnir/node"
 )
 
 type Server struct{
     ip string
     port int
+    memoryStats runtime.MemStats
+    nbCores int
 }
 
 func main(){
+
+    server := Initialize()
+
+    fmt.Printf("Server is ready at %s:%d\n",  server.ip, server.port)
+
+}
+
+func Initialize() *Server{
 
     serverIp := flag.String("ip", "127.0.0.1", "The Server IP")
     serverPort := flag.Int("port", 9999, "The Server Port")
@@ -23,12 +34,10 @@ func main(){
         port: *serverPort,
     }
 
-    c := make(chan string)
+    server.nbCores = runtime.NumCPU()
+    runtime.ReadMemStats(&server.memoryStats)
 
-    go node.Initialize(c)
+    fmt.Printf("Server is now initialized with %d/%d bytes \n", server.memoryStats.Alloc, server.memoryStats.TotalAlloc)
 
-    msg := <- c
-
-    fmt.Printf(msg + "\n")
-    fmt.Printf("Server initialized at " + server.ip + ":" + fmt.Sprintf("%d", server.port) + "\n")
+    return &server
 }
