@@ -32,6 +32,7 @@ func (s *Server) initialize(){
     s.port = *flag.Int("port", 9999, "The Server Port")
     flag.Parse()
 
+	s.nodes = make(map[int]node.Node)
     s.nbCores = runtime.NumCPU()
     runtime.ReadMemStats(&s.memoryStats)
 
@@ -60,11 +61,10 @@ func (s *Server) createNode(){
 
 func (s *Server) generateNodeId() int {
 
-    for i := 0; ; i++ {
+    for i := 1; ; i++ {
 	
-	    if value, ok := s.nodes[i]; !ok {
+	    if _, ok := s.nodes[i]; !ok {
 		
-			fmt.Printf("%v", value)
 		    return i
 		
 		}
