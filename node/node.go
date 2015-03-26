@@ -1,18 +1,38 @@
 package node
 
-import(
-    "fmt"
-    "runtime"
-)
+type Client struct{
+    Id int
+}
 
-func Initialize(c chan string){
+type Node struct{
+    Id int
+	Clients map[int]Client
+}
 
-    cores := runtime.NumCPU()
+func (n *Node) addClient(c *Client) bool{
 
-    var memoryStats runtime.MemStats
+    n.Clients[c.Id] = *c
 
-    runtime.ReadMemStats(&memoryStats)
+    return true
 
-    c <- "This machine has " + fmt.Sprintf("%d", cores) + " cores and the program uses " + fmt.Sprintf("%d", memoryStats.TotalAlloc) + " bytes"
+}
+
+func (n *Node) removeClient(id int) bool{
+
+    delete(n.Clients, id)
+
+    return true
+
+}
+
+func (n *Node) getClients() map[int]Client{
+
+    return n.Clients
+
+}
+
+func (n *Node) getClient(id int) Client{
+
+    return n.Clients[id]
 
 }

@@ -4,7 +4,7 @@ import(
     "fmt"
     "flag"
     "runtime"
-    //"gleipnir/node"
+    "gleipnir/node"
 )
 
 type Server struct{
@@ -12,32 +12,62 @@ type Server struct{
     port int
     memoryStats runtime.MemStats
     nbCores int
+	nodes map[int]node.Node
 }
 
 func main(){
 
-    server := Initialize()
-
+	var server Server
+    server.initialize()
+	
     fmt.Printf("Server is ready at %s:%d\n",  server.ip, server.port)
+	
+	server.launchNodes()
 
 }
 
-func Initialize() *Server{
+func (s *Server) initialize(){
 
-    serverIp := flag.String("ip", "127.0.0.1", "The Server IP")
-    serverPort := flag.Int("port", 9999, "The Server Port")
-
+	s.ip = *flag.String("ip", "127.0.0.1", "The Server IP")
+    s.port = *flag.Int("port", 9999, "The Server Port")
     flag.Parse()
 
-    server := Server{
-        ip: *serverIp,
-        port: *serverPort,
-    }
+    s.nbCores = runtime.NumCPU()
+    runtime.ReadMemStats(&s.memoryStats)
 
-    server.nbCores = runtime.NumCPU()
-    runtime.ReadMemStats(&server.memoryStats)
+    fmt.Printf("Server is now initialized with %d/%d bytes \n", s.memoryStats.Alloc, s.memoryStats.TotalAlloc)
+}
 
-    fmt.Printf("Server is now initialized with %d/%d bytes \n", server.memoryStats.Alloc, server.memoryStats.TotalAlloc)
+func (s *Server) launchNodes(){
 
-    return &server
+    fmt.Printf("%d cores are available on this machine\n", s.nbCores)
+	
+	s.createNode()
+
+}
+
+func (s *Server) createNode(){
+
+    var newNode node.Node
+	newNode.Id = s.generateNodeId()
+    newNode.Clients = make(map[int]node.Client, 0)
+	
+    s.nodes[newNode.Id] = newNode
+
+	fmt.Printf("The node %d is now initialized\n", newNode.Id)
+	
+}
+
+func (s *Server) generateNodeId() int {
+
+    for i := 0; ; i++ {
+	
+	    if value, ok := s.nodes[i]; !ok {
+		
+			fmt.Printf("%v", value)
+		    return i
+		
+		}
+	
+	}
 }
