@@ -1,0 +1,6 @@
+package kernel
+
+func Launch() {
+
+
+}
