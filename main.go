@@ -2,19 +2,21 @@ package main
 
 import(
 	"io/ioutil"
-	"gleipnir/error"
 	"encoding/json"
-	
+	"gleipnir/error"
+	"gleipnir/service"
 )
 
 type Configuration struct {
-
-	Services []string `json: "services"`
-
+	Services service.Services `json: "services"`
 }
 
-func main() {
 
+func main() {
+	loadConfig()
+}
+
+func loadConfig() {
 	data, err := ioutil.ReadFile("config.json")
 	error.Check(err)
 	
