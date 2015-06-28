@@ -1,4 +1,4 @@
-package error
+package errors
 
 func Check(e error) {
 
