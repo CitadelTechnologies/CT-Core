@@ -1,27 +1,31 @@
 package main
 
 import(
-	"io/ioutil"
-	"encoding/json"
-	"gleipnir/error"
-	"gleipnir/service"
+	"os"
+	"runtime"
+	"gleipnir/kernel"
 )
 
-type Configuration struct {
-	Services service.Services `json: "services"`
-}
-
+var PathSeparator string
+var Gopath string
 
 func main() {
-	loadConfig()
+
+	definePaths()
+
+	var core kernel.Kernel
+	core.Init()
+	core.Run()
 }
 
-func loadConfig() {
-	data, err := ioutil.ReadFile("config.json")
-	error.Check(err)
-	
-	var config Configuration
-	
-	err = json.Unmarshal([]byte(data), &config)
-	error.Check(err)
+func definePaths() {
+
+	if runtime.GOOS == "windows" {
+		PathSeparator = "\\"
+	} else {
+		PathSeparator = "/"
+	}
+
+	Gopath = os.Getenv("GOPATH")
+
 }

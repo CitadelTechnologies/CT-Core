@@ -2,18 +2,22 @@ package server
 
 type Server struct {
 
-	Ip string `json:"ip"`
-	Port integer
+	Port int `json:"port"`
+
+}
+
+func(s *Server) Launch() {
+
+
 	
+}
+
+func(s *Server) Listen() {
+
 
 }
 
-func (Server *s) Listen() {
-
-
-}
-
-func (Server *s) Shutdown() {
+func (s *Server) Shutdown() {
 
 
 
