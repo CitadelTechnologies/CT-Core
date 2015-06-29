@@ -3,8 +3,8 @@
 	"services": [
 		{
 			"name": "Budget Manager",
-			"path": "budget-manager:main.go",
-			"port": 8956,
+			"path": "budget-manager:budget-manager",
+			"first_port": 8956,
 			"max_instances": 3
 		}
 	]

@@ -1,7 +1,7 @@
 package kernel
 
 import(
-	"os"
+	"os/exec"
 	"strconv"
 	"gleipnir/errors"
 )
@@ -17,8 +17,7 @@ type(
 	ServiceDefinitions []ServiceDefinition
 	Service struct{
 		Port int
-		Process *os.Process
-		ProcessAttr *os.ProcAttr
+		Command *exec.Cmd
 	}
 	Services []Service
 )
@@ -26,16 +25,10 @@ type(
 func initService(sd ServiceDefinition, i int, path string) Service {
 
 	var s Service
-	var args []string
-	var err error
-
-	s.ProcessAttr = new(os.ProcAttr)
 	s.Port = sd.FirstPort + i
+	s.Command = exec.Command(path, strconv.Itoa(s.Port))
 
-	args = append(args, strconv.Itoa(s.Port))
-
-	s.Process, err = os.StartProcess("go run " + path, args, s.ProcessAttr)
-
+	err := s.Command.Start()
 	errors.Check(err)
 
 	return s
