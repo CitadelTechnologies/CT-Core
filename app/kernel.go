@@ -6,18 +6,22 @@ import(
 	"runtime"
 	"gleipnir/errors"
 	"strings"
+        "strconv"
 	"os"
+        "math"
 )
 
 type(
 	Configuration struct {
+                MemoryLimit string `json:"memory_limit"`
 		PathSeparator string
 		Gopath string
                 ServerData Server `json:"server"`
 		ServiceDefinitions ServiceDefinitions `json:"services"`
 	}
 	Kernel struct {
-		UsedPorts []int `json:"used_ports"`
+		UsedPorts []int `json:"-"`
+                MaxMemory int `json:"max_memory"`
 		Memory runtime.MemStats `json:"memory"`
 		Server Server `json:"-"`
 		Services map[string]Services `json:"services"`
@@ -70,6 +74,20 @@ func (k *Kernel) loadConfig() {
 	
 	err = json.Unmarshal([]byte(data), &k.Configuration)
 	errors.Check(err)
+
+        var memoryLimit int
+        memoryLimit, err = strconv.Atoi(k.Configuration.MemoryLimit[:len(k.Configuration.MemoryLimit)-1])
+        errors.Check(err)
+
+        unit := k.Configuration.MemoryLimit[len(k.Configuration.MemoryLimit)-1:]
+        units := map[string]int{
+            "O": 0,
+            "K": 1,
+            "M": 2,
+            "G": 3,
+        }
+
+        k.MaxMemory = memoryLimit * int(math.Pow(1024, float64(units[unit])))
 }
 
 func (k *Kernel) Run() {
