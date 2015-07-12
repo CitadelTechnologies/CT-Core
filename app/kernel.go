@@ -17,12 +17,12 @@ type(
 		ServiceDefinitions ServiceDefinitions `json:"services"`
 	}
 	Kernel struct {
-		UsedPorts []int
-		Memory runtime.MemStats
-		Server Server
-		Services map[string]Services
-		Configuration Configuration
-		IsRunning bool
+		UsedPorts []int `json:"used_ports"`
+		Memory runtime.MemStats `json:"memory"`
+		Server Server `json:"-"`
+		Services map[string]Services `json:"services"`
+		Configuration Configuration `json:"-"`
+		IsRunning bool `json:"is_running"`
 	}
 )
 
