@@ -55,11 +55,17 @@ func (c *Configuration) definePaths() {
 func (k *Kernel) Initialize() {
 
         k.IsRunning = false
-        runtime.ReadMemStats(&k.Memory)
+        k.refreshProfile()
 	k.loadConfig()
 
 	k.Server = k.Configuration.ServerData
 	k.Server.Launch()
+}
+
+func (k *Kernel) refreshProfile() {
+
+        runtime.ReadMemStats(&k.Memory)
+
 }
 
 /**
