@@ -1,9 +1,13 @@
 {
-	"port": 6600,
+        "server": {
+                "http_port": "6600",
+                "tcp_port": "6601",
+                "ws_port": "6602"
+        },
 	"services": [
 		{
 			"name": "Budget Manager",
-			"path": "budget-manager:budget-manager",
+			"path": "budget-manager:budget-manager.exe",
 			"first_port": 8956,
 			"max_instances": 3
 		}

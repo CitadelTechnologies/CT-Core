@@ -1,12 +1,8 @@
 package main
 
 import(
-	"gleipnir/kernel"
+	_ "gleipnir/app"
 )
 
 func main() {
-	var core kernel.Kernel
-	core.Init()
-	defer core.Shutdown()
-	core.Run()
 }
