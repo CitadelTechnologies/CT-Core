@@ -23,9 +23,14 @@ type(
 		UsedPorts []int `json:"-"`
                 MaxMemory int `json:"max_memory"`
 		Memory runtime.MemStats `json:"memory"`
+
+                CpusNumber int `json:"cpus_number"`
+                UsedCpus int `json:"used_cpus"`
+
 		Server Server `json:"-"`
 		Services map[string]Services `json:"services"`
 		Configuration Configuration `json:"-"`
+
 		IsRunning bool `json:"is_running"`
 	}
 )
@@ -58,6 +63,9 @@ func (k *Kernel) Initialize() {
         k.refreshProfile()
 	k.loadConfig()
 
+        k.CpusNumber = runtime.NumCPU()
+        k.UsedCpus = runtime.GOMAXPROCS(0)
+
 	k.Server = k.Configuration.ServerData
 	k.Server.Launch()
 }
@@ -65,6 +73,7 @@ func (k *Kernel) Initialize() {
 func (k *Kernel) refreshProfile() {
 
         runtime.ReadMemStats(&k.Memory)
+        runtime.GC()
 
 }
 
