@@ -26,6 +26,9 @@ func(s *Server) ListenTcp() {
 func(s *Server) ListenHttp() {
 
     http.HandleFunc("/status", sendStatus)
+    http.HandleFunc("/run", runKernel)
+    http.HandleFunc("/shutdownServices", shutdownServices)
+    http.HandleFunc("/shutdown", shutdownKernel)
     http.ListenAndServe(":" + s.HttpPort, nil)
 }
 

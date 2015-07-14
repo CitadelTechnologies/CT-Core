@@ -147,24 +147,28 @@ func (k *Kernel) launchServices() {
 
 func (k *Kernel) Shutdown() {
 
-        if k.IsRunning == false {
+        if k.IsRunning != false {
 
-            return
+            k.ShutdownServices()
 
         }
-
         k.Server.Shutdown()
+        os.Exit(0)
 
-	for _, services := range k.Services {
+}
 
-		for _, service := range services {
+func (k *Kernel) ShutdownServices() {
 
-			err := service.Command.Wait()
-			errors.Check(err)
+    for _, services := range k.Services {
 
-		}
-	}
+            for _, service := range services {
 
-        k.IsRunning = false
+                    err := service.Command.Wait()
+                    errors.Check(err)
+
+            }
+    }
+    k.IsRunning = false
+    k.Services = make(map[string]Services)
 
 }

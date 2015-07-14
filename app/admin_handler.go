@@ -16,3 +16,27 @@ func sendStatus(w http.ResponseWriter, r *http.Request) {
 
 
 }
+
+func shutdownKernel(w http.ResponseWriter, r *http.Request) {
+
+    Core.Shutdown()
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.WriteHeader(http.StatusNoContent)
+
+}
+
+func runKernel(w http.ResponseWriter, r *http.Request) {
+
+    Core.Run()
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.WriteHeader(http.StatusNoContent)
+
+}
+
+func shutdownServices(w http.ResponseWriter, r *http.Request) {
+
+    Core.ShutdownServices()
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.WriteHeader(http.StatusNoContent)
+
+}
