@@ -16,8 +16,8 @@ type(
 	}
 	ServiceDefinitions []ServiceDefinition
 	Service struct{
-		Port int
-		Command *exec.Cmd
+		Port int `json:"port"`
+		Command *exec.Cmd `json:"-"`
 	}
 	Services []Service
 )
