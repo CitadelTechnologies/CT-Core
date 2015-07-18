@@ -41,7 +41,6 @@ func init(){
 
 	Core.Initialize()
 	defer Core.Shutdown()
-	//Core.Run()
 
 }
 
@@ -60,11 +59,14 @@ func (c *Configuration) definePaths() {
 func (k *Kernel) Initialize() {
 
         k.IsRunning = false
+	k.Services = make(map[string]Services)
         k.refreshProfile()
 	k.loadConfig()
 
         k.CpusNumber = runtime.NumCPU()
         k.UsedCpus = runtime.GOMAXPROCS(0)
+
+	k.launchServices(true)
 
 	k.Server = k.Configuration.ServerData
 	k.Server.Launch()
@@ -107,7 +109,7 @@ func (k *Kernel) loadConfig() {
 
 func (k *Kernel) Run() {
     
-	k.launchServices()
+	k.launchServices(false)
         k.IsRunning = true
         runtime.ReadMemStats(&k.Memory)
 }
@@ -115,33 +117,39 @@ func (k *Kernel) Run() {
 /**
  *  Get the defined services for the kernel and launch them
  *  In separate processes
+ *  If preHeating is set to true, only the configured services will be launched
  */
-func (k *Kernel) launchServices() {
+func (k *Kernel) launchServices(preHeating bool) {
         // The configuration contains the services definitions
 	c := k.Configuration
-	k.Services = make(map[string]Services)
 
         // For each one, we instanciate the service in the kernel
 	for _, sd := range c.ServiceDefinitions {
 
-                // Each service can be initialized in several processes
-                // As long as material resources consumption stays stable (to implement)
-		for i := 0; i < sd.MaxInstances; i++ {
+            if preHeating == true && sd.PreHeating == false  {
+                continue
+            } else if _, serviceExists := k.Services[sd.Name]; serviceExists {
+                continue
+            }
 
-                        // The executable file is contained in the config as "project:executable"
-			path := c.Gopath + c.PathSeparator + "src" + c.PathSeparator + strings.Replace(sd.Path, ":", c.PathSeparator, -1)
+            // Each service can be initialized in several processes
+            // As long as material resources consumption stays stable (to implement)
+            for i := 0; i < sd.MaxInstances; i++ {
 
-			service := initService(sd, i, path)
-                        // If this service has already been initialized, we just append an item to the Services struct
-                        // Otherwise we declare a new Services struct with the service inside
-			if _, hasName := k.Services[sd.Name]; hasName {
-				k.Services[sd.Name] = append(k.Services[sd.Name], service)
-			} else {
-				k.Services[sd.Name] = Services{service}
-			}
-			k.UsedPorts = append(k.UsedPorts, service.Port)
-			sd.NbInstances++
-		}
+                    // The executable file is contained in the config as "project:executable"
+                    path := c.Gopath + c.PathSeparator + "src" + c.PathSeparator + strings.Replace(sd.Path, ":", c.PathSeparator, -1)
+
+                    service := initService(sd, i, path, c.ServerData.TcpPort)
+                    // If this service has already been initialized, we just append an item to the Services struct
+                    // Otherwise we declare a new Services struct with the service inside
+                    if _, hasName := k.Services[sd.Name]; hasName {
+                            k.Services[sd.Name] = append(k.Services[sd.Name], service)
+                    } else {
+                            k.Services[sd.Name] = Services{service}
+                    }
+                    k.UsedPorts = append(k.UsedPorts, service.Port)
+                    sd.NbInstances++
+            }
 	}
 }
 

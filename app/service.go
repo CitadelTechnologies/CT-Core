@@ -13,6 +13,7 @@ type(
 		FirstPort int `json:"first_port"`
 		NbInstances int `json:"nb_instances"`
 		MaxInstances int `json:"max_instances"`
+                PreHeating bool `json:"preheating"`
 	}
 	ServiceDefinitions []ServiceDefinition
 	Service struct{
@@ -22,11 +23,11 @@ type(
 	Services []Service
 )
 
-func initService(sd ServiceDefinition, i int, path string) Service {
+func initService(sd ServiceDefinition, i int, path string, kernelPort string) Service {
 
 	var s Service
 	s.Port = sd.FirstPort + i
-	s.Command = exec.Command(path, strconv.Itoa(s.Port))
+	s.Command = exec.Command(path, "--service-port=" + strconv.Itoa(s.Port), "--kernel-port=" + kernelPort)
 
 	err := s.Command.Start()
 	errors.Check(err)
