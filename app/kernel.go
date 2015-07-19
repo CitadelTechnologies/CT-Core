@@ -1,38 +1,41 @@
 package app
 
 import(
-	"io/ioutil"
-	"encoding/json"
-	"runtime"
-	"gleipnir/errors"
-	"strings"
-        "strconv"
-	"os"
-        "math"
+    "io/ioutil"
+    "encoding/json"
+    "runtime"
+    "gleipnir/errors"
+    "strings"
+    "strconv"
+    "os"
+    "math"
 )
 
 type(
-	Configuration struct {
-                MemoryLimit string `json:"memory_limit"`
-		PathSeparator string
-		Gopath string
-                ServerData Server `json:"server"`
-		ServiceDefinitions ServiceDefinitions `json:"services"`
-	}
-	Kernel struct {
-		UsedPorts []int `json:"-"`
-                MaxMemory int `json:"max_memory"`
-		Memory runtime.MemStats `json:"memory"`
+    Configuration struct {
+        MemoryLimit string `json:"memory_limit"`
+        PathSeparator string
+        Gopath string
+        ServerData Server `json:"server"`
+        ServiceDefinitions ServiceDefinitions `json:"services"`
+    }
+    Kernel struct {
+        UsedPorts []int `json:"-"`
+        MaxMemory int `json:"max_memory"`
+        Memory runtime.MemStats `json:"memory"`
 
-                CpusNumber int `json:"cpus_number"`
-                UsedCpus int `json:"used_cpus"`
+        CpusNumber int `json:"cpus_number"`
+        UsedCpus int `json:"used_cpus"`
 
-		Server Server `json:"-"`
-		Services map[string]Services `json:"services"`
-		Configuration Configuration `json:"-"`
+        Server Server `json:"-"`
 
-		IsRunning bool `json:"is_running"`
-	}
+        Services map[string]Services `json:"services"`
+        ServiceTokens map[string]*Service
+
+        Configuration Configuration `json:"-"`
+
+        IsRunning bool `json:"is_running"`
+    }
 )
 
 var Core Kernel
@@ -60,6 +63,7 @@ func (k *Kernel) Initialize() {
 
         k.IsRunning = false
 	k.Services = make(map[string]Services)
+	k.ServiceTokens = make(map[string]*Service)
         k.refreshProfile()
 	k.loadConfig()
 
@@ -103,7 +107,6 @@ func (k *Kernel) loadConfig() {
             "M": 2,
             "G": 3,
         }
-
         k.MaxMemory = memoryLimit * int(math.Pow(1024, float64(units[unit])))
 }
 
@@ -139,7 +142,7 @@ func (k *Kernel) launchServices(preHeating bool) {
                     // The executable file is contained in the config as "project:executable"
                     path := c.Gopath + c.PathSeparator + "src" + c.PathSeparator + strings.Replace(sd.Path, ":", c.PathSeparator, -1)
 
-                    service := initService(sd, i, path, c.ServerData.TcpPort)
+                    service := sd.initService(i, path, c.ServerData.TcpPort)
                     // If this service has already been initialized, we just append an item to the Services struct
                     // Otherwise we declare a new Services struct with the service inside
                     if _, hasName := k.Services[sd.Name]; hasName {
@@ -147,6 +150,7 @@ func (k *Kernel) launchServices(preHeating bool) {
                     } else {
                             k.Services[sd.Name] = Services{service}
                     }
+                    k.ServiceTokens[service.Token] = *service
                     k.UsedPorts = append(k.UsedPorts, service.Port)
                     sd.NbInstances++
             }
@@ -178,5 +182,11 @@ func (k *Kernel) ShutdownServices() {
     }
     k.IsRunning = false
     k.Services = make(map[string]Services)
+
+}
+
+func (k *Kernel) getService(tokenId string) Service {
+
+    
 
 }

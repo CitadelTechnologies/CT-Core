@@ -1,10 +1,12 @@
 package app
 
 import(
-    "fmt"
     "net"
     "net/http"
-    //"encoding/json"
+    "encoding/json"
+    "github.com/Kern046/GleipnirServer"
+    //"unsafe"
+    "bytes"
 )
 
 type Server struct {
@@ -40,13 +42,17 @@ func(s *Server) ListenTcp() {
 
 func (s *Server) authenticateTcpConnection(conn net.Conn) {
 
-    buffer := make([]byte, 4096)
+    var message GleipnirServer.Message
+    buffer := make([]byte, 2048)
 
     if _, err := conn.Read(buffer); err != nil {
         panic(err)
     }
-    fmt.Printf("%s\n", buffer)
-
+    buffer = bytes.Trim(buffer, "\x00")
+    if err := json.Unmarshal(buffer, &message); err != nil {
+        panic(err)
+    }
+    handleServiceMessage(message)
 }
 
 func(s *Server) ListenHttp() {

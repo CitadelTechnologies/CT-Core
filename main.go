@@ -1,7 +1,7 @@
 package main
 
 import(
-	_ "gleipnir/app"
+    _ "gleipnir/app"
 )
 
 func main() {
