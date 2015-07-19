@@ -4,12 +4,12 @@ import(
     "io/ioutil"
     "encoding/json"
     "runtime"
-    "gleipnir/errors"
     "strings"
     "strconv"
     "os"
     "math"
     "sync"
+    "errors"
 )
 
 type(
@@ -94,14 +94,14 @@ func (k *Kernel) loadConfig() {
 	k.Configuration.definePaths()
 
 	data, err := ioutil.ReadFile("config.json")
-	errors.Check(err)
+	CheckError(err)
 	
 	err = json.Unmarshal([]byte(data), &k.Configuration)
-	errors.Check(err)
+	CheckError(err)
 
         var memoryLimit int
         memoryLimit, err = strconv.Atoi(k.Configuration.MemoryLimit[:len(k.Configuration.MemoryLimit)-1])
-        errors.Check(err)
+        CheckError(err)
 
         unit := k.Configuration.MemoryLimit[len(k.Configuration.MemoryLimit)-1:]
         units := map[string]int{
@@ -149,9 +149,9 @@ func (k *Kernel) launchServices(preHeating bool) {
                     // If this service has already been initialized, we just append an item to the Services struct
                     // Otherwise we declare a new Services struct with the service inside
                     if _, hasName := k.Services[sd.Name]; hasName {
-                            k.Services[sd.Name] = append(k.Services[sd.Name], service)
+                            k.Services[sd.Name] = append(k.Services[sd.Name], &service)
                     } else {
-                            k.Services[sd.Name] = Services{service}
+                            k.Services[sd.Name] = Services{&service}
                     }
                     k.ServiceTokens[service.Token] = &service
                     k.UsedPorts = append(k.UsedPorts, service.Port)
@@ -163,30 +163,39 @@ func (k *Kernel) launchServices(preHeating bool) {
 func (k *Kernel) Shutdown() {
 
     k.Server.Shutdown()
-    k.ShutdownServices()
+    k.ShutdownServices(true)
     os.Exit(0)
 
 }
 
-func (k *Kernel) ShutdownServices() {
+/**
+ * If preheating is set to false, the preheating services won't be extinguished
+ */
+func (k *Kernel) ShutdownServices(preheating bool) {
 
-    for _, services := range k.Services {
+    for key, services := range k.Services {
+        mustBeDeleted := true
+
         for _, service := range services {
+            if preheating == false && service.PreHeating == true {
+                mustBeDeleted = false
+                break
+            }
             err := service.Command.Process.Kill()
-            errors.Check(err)
+            CheckError(err)
+        }
+        if mustBeDeleted == true {
+            delete(k.Services, key)
         }
     }
     k.IsRunning = false
-    k.Services = make(map[string]Services)
-
 }
 
-func (k *Kernel) getService(token string) (*Service, bool) {
+func (k *Kernel) getService(token string) (*Service, error) {
 
-    pointer, exists := k.ServiceTokens[token]
-    if exists != true {
-        var s Service
-        return &s, false
+    pointer := k.ServiceTokens[token]
+    if pointer == nil {
+        return nil, errors.New("Service not found")
     }
-    return pointer, true
+    return pointer, nil
 }

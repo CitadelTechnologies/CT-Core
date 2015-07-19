@@ -1,8 +1,8 @@
-package errors
+package app
 
 import "fmt"
 
-func Check(e error) {
+func CheckError(e error) {
 
 	if(e != nil) {
 		fmt.Println(e.Error())

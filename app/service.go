@@ -3,7 +3,6 @@ package app
 import(
     "os/exec"
     "strconv"
-    "gleipnir/errors"
     "github.com/Kern046/GleipnirServer"
     "math/rand"
     "time"
@@ -12,25 +11,26 @@ import(
 )
 
 type(
-	ServiceDefinition struct {
-            Name string `json:"name"`
-            Path string `json:"path"`
-            FirstPort int `json:"first_port"`
-            NbInstances int `json:"nb_instances"`
-            MaxInstances int `json:"max_instances"`
-            PreHeating bool `json:"preheating"`
-	}
-	ServiceDefinitions []ServiceDefinition
-	Service struct{
-            Token string `json:"-"`
-            Port int `json:"port"`
-            ConsumedMemory uint64 `json:"consumed_memory"`
-            AllocatedMemory uint64 `json:"allocated_memory"`
-            StartedAt time.Time `json:"started_at"`
-            UpdatedAt time.Time `json:"updated_at"`
-            Command *exec.Cmd `json:"-"`
-	}
-	Services []Service
+    ServiceDefinition struct {
+        Name string `json:"name"`
+        Path string `json:"path"`
+        FirstPort int `json:"first_port"`
+        NbInstances int `json:"nb_instances"`
+        MaxInstances int `json:"max_instances"`
+        PreHeating bool `json:"preheating"`
+    }
+    ServiceDefinitions []ServiceDefinition
+    Service struct{
+        Token string `json:"-"`
+        Port int `json:"port"`
+        ConsumedMemory uint64 `json:"consumed_memory"`
+        AllocatedMemory uint64 `json:"allocated_memory"`
+        StartedAt time.Time `json:"started_at"`
+        UpdatedAt time.Time `json:"updated_at"`
+        Command *exec.Cmd `json:"-"`
+        PreHeating bool `json:"-"`
+    }
+    Services []*Service
 )
 
 func (sd *ServiceDefinition) initService(i int, path string, kernelPort string) Service {
@@ -38,9 +38,10 @@ func (sd *ServiceDefinition) initService(i int, path string, kernelPort string) 
     var s Service
     s.Token = sd.generateToken()
     s.Port = sd.FirstPort + i
+    s.PreHeating = sd.PreHeating
     s.Command = exec.Command(path, "--service-port=" + strconv.Itoa(s.Port), "--kernel-port=" + kernelPort, "--token=" + s.Token)
     err := s.Command.Start()
-    errors.Check(err)
+    CheckError(err)
 
     return s
 }
@@ -67,9 +68,9 @@ func getRandomString(strlen int) string {
 }
 
 func handleServiceMessage(message GleipnirServer.Message, conn net.Conn) {
-    service, success := Core.getService(message.Emmitter)
-    if success != true {
-        sendResponse(conn, 404, "Service not found")
+    service, err := Core.getService(message.Emmitter)
+    if err != nil {
+        sendResponse(conn, 404, err.Error())
     }
     service.updateStatus(message)
     switch message.Command {
@@ -79,6 +80,7 @@ func handleServiceMessage(message GleipnirServer.Message, conn net.Conn) {
 }
 
 func (s *Service) updateStatus(message GleipnirServer.Message) {
+
 
     s.ConsumedMemory = message.Status.ConsumedMemory
     s.AllocatedMemory = message.Status.AllocatedMemory
@@ -92,9 +94,7 @@ func sendResponse(conn net.Conn, status int, message string) {
     response := GleipnirServer.Response{Status: status, Message: message}
     
     buffer, err := json.Marshal(response)
-    if err != nil {
-        panic(err)
-    }
+    CheckError(err)
     if _, err := conn.Write(buffer); err != nil {
         panic(err)
     }
