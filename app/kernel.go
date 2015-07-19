@@ -9,6 +9,7 @@ import(
     "strconv"
     "os"
     "math"
+    "sync"
 )
 
 type(
@@ -28,9 +29,10 @@ type(
         UsedCpus int `json:"used_cpus"`
 
         Server Server `json:"-"`
+        ServerWaitGroup sync.WaitGroup `json:"-"`
 
         Services map[string]Services `json:"services"`
-        ServiceTokens map[string]*Service
+        ServiceTokens map[string]*Service `json:"-"`
 
         Configuration Configuration `json:"-"`
 
@@ -43,6 +45,7 @@ var Core Kernel
 func init(){
 
 	Core.Initialize()
+        Core.ServerWaitGroup.Wait()
 	defer Core.Shutdown()
 
 }
@@ -150,7 +153,7 @@ func (k *Kernel) launchServices(preHeating bool) {
                     } else {
                             k.Services[sd.Name] = Services{service}
                     }
-                    k.ServiceTokens[service.Token] = *service
+                    k.ServiceTokens[service.Token] = &service
                     k.UsedPorts = append(k.UsedPorts, service.Port)
                     sd.NbInstances++
             }
@@ -159,34 +162,31 @@ func (k *Kernel) launchServices(preHeating bool) {
 
 func (k *Kernel) Shutdown() {
 
-        if k.IsRunning != false {
-
-            k.ShutdownServices()
-
-        }
-        k.Server.Shutdown()
-        os.Exit(0)
+    k.Server.Shutdown()
+    k.ShutdownServices()
+    os.Exit(0)
 
 }
 
 func (k *Kernel) ShutdownServices() {
 
     for _, services := range k.Services {
-
-            for _, service := range services {
-
-                    err := service.Command.Wait()
-                    errors.Check(err)
-
-            }
+        for _, service := range services {
+            err := service.Command.Process.Kill()
+            errors.Check(err)
+        }
     }
     k.IsRunning = false
     k.Services = make(map[string]Services)
 
 }
 
-func (k *Kernel) getService(tokenId string) Service {
+func (k *Kernel) getService(token string) (*Service, bool) {
 
-    
-
+    pointer, exists := k.ServiceTokens[token]
+    if exists != true {
+        var s Service
+        return &s, false
+    }
+    return pointer, true
 }

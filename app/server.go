@@ -19,9 +19,10 @@ type Server struct {
 
 func(s *Server) Launch() {
 
-        s.ListenTcp()
-        s.ListenHttp()
-        s.ListenWebsocket()
+    Core.ServerWaitGroup.Add(3)
+    go func() { defer Core.ServerWaitGroup.Done(); s.ListenTcp()}()
+    go func() { defer Core.ServerWaitGroup.Done(); s.ListenHttp()}()
+    go func() { defer Core.ServerWaitGroup.Done(); s.ListenWebsocket()}()
 }
 
 func(s *Server) ListenTcp() {
@@ -52,7 +53,7 @@ func (s *Server) authenticateTcpConnection(conn net.Conn) {
     if err := json.Unmarshal(buffer, &message); err != nil {
         panic(err)
     }
-    handleServiceMessage(message)
+    handleServiceMessage(message, conn)
 }
 
 func(s *Server) ListenHttp() {
