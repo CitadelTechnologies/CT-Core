@@ -1,0 +1,24 @@
+{
+    "memory_limit": "128M",
+    "server": {
+        "http_port": "6600",
+        "tcp_port": "6601",
+        "ws_port": "6602"
+    },
+	"services": [
+		{
+			"name": "Budget Manager",
+			"path": "budget-manager:budget-manager",
+			"first_port": 8956,
+			"max_instances": 3,
+            "preheating": false
+		},
+		{
+			"name": "8thWonderland Front",
+			"path": "thw-front:thw-front",
+			"first_port": 8880,
+			"max_instances": 1,
+            "preheating": true
+		}
+	]
+}
