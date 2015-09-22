@@ -5,16 +5,50 @@ import(
     "net/http"
     "encoding/json"
     "github.com/Kern046/GleipnirServer"
-    //"unsafe"
+    "github.com/gorilla/websocket"
     "bytes"
 )
 
-type Server struct {
-	HttpPort string `json:"http_port"`
-	WsPort string `json:"ws_port"`
-	TcpPort string `json:"tcp_port"`
-        
+type(
+    Server struct {
+        HttpPort string `json:"http_port"`
+
         TcpListener net.Listener `json:"-"`
+        TcpPort string `json:"tcp_port"`
+
+        WsConn WsConnection `json:"-"`
+        WsPort string `json:"ws_port"`
+    }
+    WsConnection  struct {
+        // The websocket connection.
+        Connection *websocket.Conn
+        // Buffered channel of outbound messages.
+        OutputBuffer chan []byte
+        // The hub.
+        Hub *WsHub `json:"-"`
+    }
+    WsHandler struct {
+        Hub *Hub
+    }
+    WsHub struct {
+        // Registered connections.
+        Connections map[*WsConnection]bool
+        // Inbound messages from the connections.
+        Broadcast chan []byte
+        // Register requests from the connections.
+        Register chan *WsConnection
+        // Unregister requests from connections.
+        Unregister chan *WsConnection
+    }
+)
+
+func newHub() *WsHub {
+    return &WsHub{
+        Broadcast:   make(chan []byte),
+        Register:    make(chan *WsConnection),
+        Unregister:  make(chan *WsConnection),
+        Connections: make(map[*WsConnection]bool),
+    }
 }
 
 func(s *Server) Launch() {
@@ -67,8 +101,40 @@ func(s *Server) ListenHttp() {
 
 func(s *Server) ListenWebsocket() {
 
-    
+}
 
+func (c *WsConnection) Read() {
+    for {
+        _, message, err := c.Connection.ReadMessage()
+        if err != nil {
+            break
+        }
+        c.Hub.Broadcast <- message
+    }
+    c.Connection.Close()
+}
+
+func (c *WsConnection) Write() {
+    for message := range c.OutputBuffer {
+        err := c.Connection.WriteMessage(websocket.TextMessage, message)
+        if err != nil {
+            break
+        }
+    }
+    c.Connection.Close()
+}
+
+func (wsh WsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    upgrader := &websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
+    ws, err := upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        return
+    }
+    c := &WsConnection{OutputBuffer: make(chan []byte, 256), Connection: ws, Hub: wsh.Hub}
+    c.Hub.Register <- c
+    defer func() { c.Hub.Unregister <- c }()
+    go c.writer()
+    c.reader()
 }
 
 func (s *Server) Shutdown() {
