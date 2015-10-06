@@ -1,7 +1,7 @@
 package main
 
 import(
-    _ "gleipnir/app"
+    _ "ct-core/app"
 )
 
 func main() {
