@@ -28,7 +28,7 @@ type(
         Hub *WsHub `json:"-"`
     }
     WsHandler struct {
-        Hub *Hub
+        Hub *WsHub
     }
     WsHub struct {
         // Registered connections.
@@ -130,11 +130,11 @@ func (wsh WsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     if err != nil {
         return
     }
-    c := &WsConnection{OutputBuffer: make(chan []byte, 256), Connection: ws, Hub: wsh.Hub}
-    c.Hub.Register <- c
-    defer func() { c.Hub.Unregister <- c }()
-    go c.writer()
-    c.reader()
+    wsc := &WsConnection{OutputBuffer: make(chan []byte, 256), Connection: ws, Hub: wsh.Hub}
+    wsc.Hub.Register <- wsc
+    defer func() { wsc.Hub.Unregister <- wsc }()
+    go wsc.Write()
+    wsc.Read()
 }
 
 func (s *Server) Shutdown() {
