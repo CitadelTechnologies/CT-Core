@@ -1,7 +1,0 @@
-package security
-
-func GenerateApiKey () {
-
-
-
-}
