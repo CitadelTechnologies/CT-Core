@@ -9,6 +9,7 @@ func sendStatus(w http.ResponseWriter, r *http.Request) {
 
     Core.refreshProfile()
 
+    w.Header().Set("Content-Type", "application/json")
     w.Header().Set("Access-Control-Allow-Origin", "*")
     err := json.NewEncoder(w).Encode(Core)
     CheckError(err)
