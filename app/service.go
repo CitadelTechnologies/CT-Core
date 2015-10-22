@@ -3,7 +3,7 @@ package app
 import(
     "os/exec"
     "strconv"
-    "github.com/Kern046/GleipnirServer"
+    "github.com/CitadelTechnologies/CT-Client"
     "math/rand"
     "time"
     "net"
@@ -67,7 +67,7 @@ func getRandomString(strlen int) string {
     return string(result)
 }
 
-func handleServiceMessage(message GleipnirServer.Message, conn net.Conn) {
+func handleServiceMessage(message ctclient.Message, conn net.Conn) {
     service, err := Core.getService(message.Emmitter)
     if err != nil {
         sendResponse(conn, 404, err.Error())
@@ -79,19 +79,16 @@ func handleServiceMessage(message GleipnirServer.Message, conn net.Conn) {
     }
 }
 
-func (s *Service) updateStatus(message GleipnirServer.Message) {
-
-
-    s.ConsumedMemory = message.Status.ConsumedMemory
-    s.AllocatedMemory = message.Status.AllocatedMemory
+func (s *Service) updateStatus(message ctclient.Message) {
+    s.ConsumedMemory = message.Status.HeapAlloc
+    s.AllocatedMemory = message.Status.HeapSys
     s.StartedAt = message.Status.StartedAt
     s.UpdatedAt = message.Status.UpdatedAt
-
 }
 
 func sendResponse(conn net.Conn, status int, message string) {
 
-    response := GleipnirServer.Response{Status: status, Message: message}
+    response := ctclient.Response{Status: status, Message: message}
     
     buffer, err := json.Marshal(response)
     CheckError(err)

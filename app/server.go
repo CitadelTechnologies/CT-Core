@@ -4,7 +4,7 @@ import(
     "net"
     "net/http"
     "encoding/json"
-    "github.com/Kern046/GleipnirServer"
+    "github.com/CitadelTechnologies/CT-Client"
     "github.com/gorilla/websocket"
     "bytes"
 )
@@ -77,7 +77,7 @@ func(s *Server) ListenTcp() {
 
 func (s *Server) authenticateTcpConnection(conn net.Conn) {
 
-    var message GleipnirServer.Message
+    var message ctclient.Message
     buffer := make([]byte, 2048)
 
     if _, err := conn.Read(buffer); err != nil {

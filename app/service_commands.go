@@ -2,11 +2,11 @@ package app
 
 import(
     "net"
-    "github.com/Kern046/GleipnirServer"
+    "github.com/CitadelTechnologies/CT-Client"
 
 )
 
-func (s *Service) connect(message GleipnirServer.Message, conn net.Conn) {
+func (s *Service) connect(message ctclient.Message, conn net.Conn) {
 
     sendResponse(conn, 200, "Connected")
 

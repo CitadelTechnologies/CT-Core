@@ -8,14 +8,14 @@
 	"services": [
 		{
 			"name": "Budget Manager",
-			"path": "budget-manager:budget-manager",
+			"path": "ct-budget-manager:ct-budget-manager",
 			"first_port": 8956,
 			"max_instances": 3,
             "preheating": false
 		},
 		{
-			"name": "8thWonderland Front",
-			"path": "thw-front:thw-front",
+			"name": "Views Manager",
+			"path": "ct-front:ct-front",
 			"first_port": 8880,
 			"max_instances": 1,
             "preheating": true
