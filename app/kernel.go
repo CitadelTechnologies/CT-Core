@@ -170,6 +170,13 @@ func (k *Kernel) launchBasicServices(preHeating bool) {
                     // The executable file is contained in the config as "project:executable"
                     path := c.Gopath + c.PathSeparator + "src" + c.PathSeparator + strings.Replace(sd.Path, ":", c.PathSeparator, -1)
 
+                    if _, err := os.Stat(path); err != nil {
+                        if os.IsNotExist(err) {
+                            continue
+                        }
+                        panic(err)
+                    }
+
                     service := sd.initService(i, path, c.ServerData.TcpPort)
                     // If this service has already been initialized, we just append an item to the Services struct
                     // Otherwise we declare a new Services struct with the service inside
