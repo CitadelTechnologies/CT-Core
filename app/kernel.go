@@ -1,6 +1,7 @@
 package app
 
 import(
+    "fmt"
     "io/ioutil"
     "encoding/json"
     "runtime"
@@ -10,6 +11,8 @@ import(
     "math"
     "sync"
     "errors"
+    "github.com/fsouza/go-dockerclient"
+    //"gopkg.in/yaml.v2"
 )
 
 type(
@@ -36,6 +39,7 @@ type(
 
         Configuration Configuration `json:"-"`
 
+        DockerClient *docker.Client `json:"-"`
         IsRunning bool `json:"is_running"`
     }
 )
@@ -45,7 +49,7 @@ var Core Kernel
 func init(){
 
 	Core.Initialize()
-        Core.ServerWaitGroup.Wait()
+    Core.ServerWaitGroup.Wait()
 	defer Core.Shutdown()
 
 }
@@ -64,25 +68,38 @@ func (c *Configuration) definePaths() {
 
 func (k *Kernel) Initialize() {
 
-        k.IsRunning = false
+    k.IsRunning = false
 	k.Services = make(map[string]Services)
 	k.ServiceTokens = make(map[string]*Service)
-        k.refreshProfile()
+    k.refreshProfile()
 	k.loadConfig()
 
-        k.CpusNumber = runtime.NumCPU()
-        k.UsedCpus = runtime.GOMAXPROCS(0)
+    k.CpusNumber = runtime.NumCPU()
+    k.UsedCpus = runtime.GOMAXPROCS(0)
+
+    if k.DockerClient == nil {
+        fmt.Println("Running with Docker");
+        k.InitializeDocker()
+    }
+    fmt.Println("Running")
 
 	k.launchServices(true)
 
 	k.Server = k.Configuration.ServerData
 	k.Server.Launch()
+
+    k.DockerClient, _ = docker.NewClientFromEnv();
+
+}
+
+func (k *Kernel) InitializeDocker() {
+    
 }
 
 func (k *Kernel) refreshProfile() {
 
-        runtime.ReadMemStats(&k.Memory)
-        runtime.GC()
+    runtime.ReadMemStats(&k.Memory)
+    runtime.GC()
 
 }
 
@@ -99,25 +116,33 @@ func (k *Kernel) loadConfig() {
 	err = json.Unmarshal([]byte(data), &k.Configuration)
 	CheckError(err)
 
-        var memoryLimit int
-        memoryLimit, err = strconv.Atoi(k.Configuration.MemoryLimit[:len(k.Configuration.MemoryLimit)-1])
-        CheckError(err)
+    var memoryLimit int
+    memoryLimit, err = strconv.Atoi(k.Configuration.MemoryLimit[:len(k.Configuration.MemoryLimit)-1])
+    CheckError(err)
 
-        unit := k.Configuration.MemoryLimit[len(k.Configuration.MemoryLimit)-1:]
-        units := map[string]int{
-            "O": 0,
-            "K": 1,
-            "M": 2,
-            "G": 3,
-        }
-        k.MaxMemory = memoryLimit * int(math.Pow(1024, float64(units[unit])))
+    unit := k.Configuration.MemoryLimit[len(k.Configuration.MemoryLimit)-1:]
+    units := map[string]int{
+        "O": 0,
+        "K": 1,
+        "M": 2,
+        "G": 3,
+    }
+    k.MaxMemory = memoryLimit * int(math.Pow(1024, float64(units[unit])))
 }
 
 func (k *Kernel) Run() {
     
 	k.launchServices(false)
-        k.IsRunning = true
-        runtime.ReadMemStats(&k.Memory)
+    k.IsRunning = true
+    runtime.ReadMemStats(&k.Memory)
+}
+
+func (k *Kernel) launchServices(preHeating bool) {
+    if k.DockerClient != nil {
+        k.launchDockerContainers(preHeating)
+    } else {
+        k.launchBasicServices(preHeating)
+    }
 }
 
 /**
@@ -125,7 +150,7 @@ func (k *Kernel) Run() {
  *  In separate processes
  *  If preHeating is set to true, only the configured services will be launched
  */
-func (k *Kernel) launchServices(preHeating bool) {
+func (k *Kernel) launchBasicServices(preHeating bool) {
         // The configuration contains the services definitions
 	c := k.Configuration
 
@@ -158,6 +183,10 @@ func (k *Kernel) launchServices(preHeating bool) {
                     sd.NbInstances++
             }
 	}
+}
+
+func (k *Kernel) launchDockerContainers(preHeating bool) {
+    fmt.Println("ok")
 }
 
 func (k *Kernel) Shutdown() {

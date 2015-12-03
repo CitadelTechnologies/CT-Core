@@ -13,6 +13,7 @@ import(
 type(
     ServiceDefinition struct {
         Name string `json:"name"`
+        ContainerName string `json:"container_name"`
         Path string `json:"path"`
         FirstPort int `json:"first_port"`
         NbInstances int `json:"nb_instances"`
