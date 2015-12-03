@@ -1,13 +1,14 @@
 package app
 
 import(
-    "fmt"
+    "bufio"
     "io/ioutil"
     "encoding/json"
     "runtime"
     "strings"
     "strconv"
     "os"
+    "log"
     "math"
     "sync"
     "errors"
@@ -38,6 +39,8 @@ type(
         ServiceTokens map[string]*Service `json:"-"`
 
         Configuration Configuration `json:"-"`
+
+        Logger *log.Logger `json:"-"`
 
         DockerClient *docker.Client `json:"-"`
         IsRunning bool `json:"is_running"`
@@ -71,6 +74,12 @@ func (k *Kernel) Initialize() {
     k.IsRunning = false
 	k.Services = make(map[string]Services)
 	k.ServiceTokens = make(map[string]*Service)
+
+    logFile, _ := os.Create("logs/log.txt")
+    logWriter := bufio.NewWriter(logFile)
+
+    k.Logger = log.New(logWriter, "logger: ", log.Lshortfile)
+
     k.refreshProfile()
 	k.loadConfig()
 
@@ -78,10 +87,10 @@ func (k *Kernel) Initialize() {
     k.UsedCpus = runtime.GOMAXPROCS(0)
 
     if k.DockerClient == nil {
-        fmt.Println("Running with Docker");
+        k.Logger.Print("Running with Docker");
         k.InitializeDocker()
     }
-    fmt.Println("Running")
+    k.Logger.Print("Running")
 
 	k.launchServices(true)
 
@@ -172,6 +181,7 @@ func (k *Kernel) launchBasicServices(preHeating bool) {
 
                     if _, err := os.Stat(path); err != nil {
                         if os.IsNotExist(err) {
+                            k.Logger.Print("The %s service executable file is not found")
                             continue
                         }
                         panic(err)
@@ -193,7 +203,7 @@ func (k *Kernel) launchBasicServices(preHeating bool) {
 }
 
 func (k *Kernel) launchDockerContainers(preHeating bool) {
-    fmt.Println("ok")
+    k.Logger.Print("ok")
 }
 
 func (k *Kernel) Shutdown() {
